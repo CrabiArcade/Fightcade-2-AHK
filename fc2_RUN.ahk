@@ -524,6 +524,7 @@ fbneoSpectateArmed := false
 lastFcActive := ""
 
 __fbneo_watch:
+  global lastFocusTitleLog
   currentFcActive := WinActive(fc_title) ? 1 : 0
   if (lastFcActive = "")
   {
