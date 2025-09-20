@@ -543,10 +543,12 @@ fbneoSpectateArmed := false
 lastFcActive := ""
 fbneoNoGameWatchHwnd := 0
 fbneoNoGameWatchSince := 0
+fbneoTimeoutFallbackSent := false
 
 __fbneo_watch:
   global lastFocusTitleLog, log_path, fc_title, fbneoSpectatingHwnd, fbneoSpectateArmed, lastFcActive
   global fbneoNoGameWatchHwnd, fbneoNoGameWatchSince, spectate_fullscreen_timeout_s, spectate_fullscreen_timeout_ms
+  global fbneoTimeoutFallbackSent
   currentFcActive := WinActive(fc_title) ? 1 : 0
   if (lastFcActive = "")
   {
@@ -657,6 +659,7 @@ loop, %list%
         fbneoNoGameWatchSince := A_TickCount
         FormatTime, txWatch,, yyyy-MM-dd HH:mm:ss
         FileAppend, % txWatch "  [no game loaded] trouvé, lancement du timer de " spectate_fullscreen_timeout_s " secondes hwnd=" (preferredHwnd + 0) "`r`n", %log_path%
+        fbneoTimeoutFallbackSent := false
      }
      else if (preferredReason = "successor" && rearmedWatch)
      {
@@ -686,6 +689,10 @@ loop, %list%
         {
            toggleReason := "title"
         }
+        if (toggleReason = "timeout" && fbneoTimeoutFallbackSent)
+        {
+           toggleReason := ""
+        }
         if (toggleReason != "")
         {
            reasonLabel := (toggleReason = "timeout") ? "timeout fallback" : "title change"
@@ -696,13 +703,19 @@ loop, %list%
            ControlSend,, !{Enter}, ahk_id %fbneoSpectatingHwnd%
            FormatTime, txAfter,, yyyy-MM-dd HH:mm:ss
            if (toggleReason = "timeout")
+            {
               FileAppend, % txAfter "  spectate forced fullscreen after wait (timeout fallback) hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
-           else
+              fbneoTimeoutFallbackSent := true
+            }
+            else
+            {
               FileAppend, % txAfter "  spectate fullscreen triggered by title change hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
-           fbneoSpectateArmed := false
-           fbneoSpectatingHwnd := 0
-           fbneoNoGameWatchHwnd := 0
-           fbneoNoGameWatchSince := 0
+              fbneoSpectateArmed := false
+              fbneoSpectatingHwnd := 0
+              fbneoNoGameWatchHwnd := 0
+              fbneoNoGameWatchSince := 0
+              fbneoTimeoutFallbackSent := false
+            }
         }
      }
      else
