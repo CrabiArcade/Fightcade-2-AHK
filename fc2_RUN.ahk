@@ -606,14 +606,17 @@ loop, %list%
 
   if (preferredHwnd)
   {
+     rearmedWatch := false
      if (fbneoNoGameWatchHwnd != preferredHwnd)
      {
         fbneoNoGameWatchHwnd := preferredHwnd
-        fbneoNoGameWatchSince := A_TickCount
+        rearmedWatch := true
      }
-     else if (!fbneoNoGameWatchSince)
+     if (!fbneoNoGameWatchSince || rearmedWatch)
      {
         fbneoNoGameWatchSince := A_TickCount
+        FormatTime, txWatch,, yyyy-MM-dd HH:mm:ss
+        FileAppend, % txWatch "  [no game loaded] trouvé, lancement du timer de 10 secondes hwnd=" (preferredHwnd + 0) "`r`n", %log_path%
      }
      fbneoSpectatingHwnd := preferredHwnd
      fbneoSpectateArmed := true
