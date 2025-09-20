@@ -520,30 +520,85 @@ return
 ; ===== Auto plein écran FBNeo en mode SPECTATE (robuste) =====
 fbneoSpectatingHwnd := 0
 fbneoSpectateArmed := false
+lastFcActive := ""
 
 __fbneo_watch:
-  ; Parcourt toutes les fenêtres FBNeo
-  WinGet, list, List, Fightcade FBNeo
-  loop, %list%
+  currentFcActive := WinActive(fc_title) ? 1 : 0
+  if (lastFcActive = "")
   {
-     id := list%A_Index%
-     WinGetTitle, t, ahk_id %id%
-     if InStr(t, "[no game loaded]")
-     {
-        ; Armé : on a vu l'écran "no game loaded" pour CETTE fenêtre
-        if WinActive("ahk_id " id)
+     lastFcActive := currentFcActive
+  }
+  else if (currentFcActive != lastFcActive)
+  {
+     FormatTime, txFocus,, yyyy-MM-dd HH:mm:ss
+     if (currentFcActive)
+        FileAppend, % txFocus "  FOCUS Fightcade activated`r`n", %log_path%
+     else
+        FileAppend, % txFocus "  FOCUS Fightcade lost`r`n", %log_path%
+     lastFcActive := currentFcActive
+  }
+
+  static lastFocusTitleLog := 0
+
+  activeHwnd := WinExist("A")
+  if (A_TickCount - lastFocusTitleLog >= 1000)
+  {
+     activeTitle := ""
+     if (activeHwnd)
+        WinGetTitle, activeTitle, ahk_id %activeHwnd%
+     FormatTime, txFocusTitle,, yyyy-MM-dd HH:mm:ss
+     FileAppend, % txFocusTitle "  FOCUS active title=" activeTitle "`r`n", %log_path%
+     lastFocusTitleLog := A_TickCount
+  }
+
+  ; Parcourt toutes les fenêtres FBNeo
+  activeHwndNum := activeHwnd + 0
+  FormatTime, tx,, HH:mm:ss
+  FileAppend, % tx "  spectate active hwnd raw=" activeHwnd " normalized=" activeHwndNum "`r`n", %log_path%
+  firstNoGameHwnd := 0
+  preferredHwnd := 0
+  armedThisRun := false
+WinGet, list, List, Fightcade FBNeo
+loop, %list%
+{
+    id := list%A_Index%
+    WinGetTitle, t, ahk_id %id%
+    if InStr(t, "[no game loaded]")
+    {
+        ; Candidat spectate détecté
+        FormatTime, tx,, yyyy-MM-dd HH:mm:ss
+        FileAppend, % tx "  spectate candidate hwnd=" id " normalized=" (id + 0) "`r`n", %log_path%
+
+        if (!firstNoGameHwnd)
+            firstNoGameHwnd := id
+
+        ; Si la fenêtre candidate est la fenêtre active, on la préfère
+        if (id + 0 = activeHwndNum)
         {
-           FormatTime, tl,, yyyy-MM-dd HH:mm:ss
-           FileAppend, % tl "  spectator wait active: " t "`r`n", %log_path%
+            preferredHwnd := id
+            FileAppend, % tx "  spectate prefer active hwnd " id " (normalized " activeHwndNum ")`r`n", %log_path%
+
+            ; Log additionnel lorsque la fenêtre active correspond
+            if WinActive("ahk_id " id)
+                FileAppend, % tx "  spectator wait active: " t "`r`n", %log_path%
+
+            break
         }
-        fbneoSpectatingHwnd := id
-        fbneoSpectateArmed := true
-        return
-     }
+    }
+}
+
+  if (!preferredHwnd && firstNoGameHwnd)
+     preferredHwnd := firstNoGameHwnd
+
+  if (preferredHwnd)
+  {
+     fbneoSpectatingHwnd := preferredHwnd
+     fbneoSpectateArmed := true
+     armedThisRun := true
   }
 
   ; Si armé, vérifier que la même fenêtre est toujours là et que le titre n'a plus "[no game loaded]"
-  if (fbneoSpectateArmed && fbneoSpectatingHwnd)
+  if (!armedThisRun && fbneoSpectateArmed && fbneoSpectatingHwnd)
   {
      if WinExist("ahk_id " fbneoSpectatingHwnd)
      {
