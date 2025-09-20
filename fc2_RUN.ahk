@@ -103,6 +103,13 @@ IniRead, notif_accept_dy, %cfg%, coords, notif_accept_dy, 0
 IniRead, notif_decline_dx, %cfg%, coords, notif_decline_dx, 0
 IniRead, notif_decline_dy, %cfg%, coords, notif_decline_dy, 0
 
+; ---------- SPECTATE SETTINGS ----------
+IniRead, spectate_fullscreen_timeout_s, %cfg%, spectate, fullscreen_timeout_s, 20
+spectate_fullscreen_timeout_s := Abs(Round(spectate_fullscreen_timeout_s + 0))
+if (spectate_fullscreen_timeout_s <= 0)
+    spectate_fullscreen_timeout_s := 20
+spectate_fullscreen_timeout_ms := spectate_fullscreen_timeout_s * 1000
+
 ; ---------- RESOLVE EXE ----------
 exe := ""
 c1 := fc_root . "\fc2-electron\fc2-electron.exe"
@@ -539,7 +546,7 @@ fbneoNoGameWatchSince := 0
 
 __fbneo_watch:
   global lastFocusTitleLog, log_path, fc_title, fbneoSpectatingHwnd, fbneoSpectateArmed, lastFcActive
-  global fbneoNoGameWatchHwnd, fbneoNoGameWatchSince
+  global fbneoNoGameWatchHwnd, fbneoNoGameWatchSince, spectate_fullscreen_timeout_s, spectate_fullscreen_timeout_ms
   currentFcActive := WinActive(fc_title) ? 1 : 0
   if (lastFcActive = "")
   {
@@ -616,7 +623,7 @@ loop, %list%
      {
         fbneoNoGameWatchSince := A_TickCount
         FormatTime, txWatch,, yyyy-MM-dd HH:mm:ss
-        FileAppend, % txWatch "  [no game loaded] trouvé, lancement du timer de 14 secondes hwnd=" (preferredHwnd + 0) "`r`n", %log_path%
+        FileAppend, % txWatch "  [no game loaded] trouvé, lancement du timer de " spectate_fullscreen_timeout_s " secondes hwnd=" (preferredHwnd + 0) "`r`n", %log_path%
      }
      fbneoSpectatingHwnd := preferredHwnd
      fbneoSpectateArmed := true
@@ -630,7 +637,7 @@ loop, %list%
         WinGetTitle, t2, ahk_id %fbneoSpectatingHwnd%
         timeoutReached := (fbneoNoGameWatchHwnd = fbneoSpectatingHwnd)
             && (fbneoNoGameWatchSince)
-            && (A_TickCount - fbneoNoGameWatchSince >= 14000)
+            && (A_TickCount - fbneoNoGameWatchSince >= spectate_fullscreen_timeout_ms)
         if (timeoutReached)
         {
            WinActivate, ahk_id %fbneoSpectatingHwnd%
