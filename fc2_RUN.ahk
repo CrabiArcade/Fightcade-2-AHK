@@ -572,7 +572,6 @@ __fbneo_watch:
   FileAppend, % tx "  spectate active hwnd raw=" activeHwnd " normalized=" activeHwndNum "`r`n", %log_path%
   firstNoGameHwnd := 0
   preferredHwnd := 0
-  armedThisRun := false
 WinGet, list, List, Fightcade FBNeo
 loop, %list%
 {
@@ -607,22 +606,24 @@ loop, %list%
 
   if (preferredHwnd)
   {
+     rearmedWatch := false
      if (fbneoNoGameWatchHwnd != preferredHwnd)
      {
         fbneoNoGameWatchHwnd := preferredHwnd
-        fbneoNoGameWatchSince := A_TickCount
+        rearmedWatch := true
      }
-     else if (!fbneoNoGameWatchSince)
+     if (!fbneoNoGameWatchSince || rearmedWatch)
      {
         fbneoNoGameWatchSince := A_TickCount
+        FormatTime, txWatch,, yyyy-MM-dd HH:mm:ss
+        FileAppend, % txWatch "  [no game loaded] trouvé, lancement du timer de 10 secondes hwnd=" (preferredHwnd + 0) "`r`n", %log_path%
      }
      fbneoSpectatingHwnd := preferredHwnd
      fbneoSpectateArmed := true
-     armedThisRun := true
   }
 
   ; Si armé, vérifier que la même fenêtre est toujours là et que le titre n'a plus "[no game loaded]"
-  if (!armedThisRun && fbneoSpectateArmed && fbneoSpectatingHwnd)
+  if (fbneoSpectateArmed && fbneoSpectatingHwnd)
   {
      if WinExist("ahk_id " fbneoSpectatingHwnd)
      {
