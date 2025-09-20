@@ -520,8 +520,24 @@ return
 ; ===== Auto plein écran FBNeo en mode SPECTATE (robuste) =====
 fbneoSpectatingHwnd := 0
 fbneoSpectateArmed := false
+lastFcActive := ""
 
 __fbneo_watch:
+  currentFcActive := WinActive(fc_title) ? 1 : 0
+  if (lastFcActive = "")
+  {
+     lastFcActive := currentFcActive
+  }
+  else if (currentFcActive != lastFcActive)
+  {
+     FormatTime, txFocus,, yyyy-MM-dd HH:mm:ss
+     if (currentFcActive)
+        FileAppend, % txFocus "  FOCUS Fightcade activated`r`n", %log_path%
+     else
+        FileAppend, % txFocus "  FOCUS Fightcade lost`r`n", %log_path%
+     lastFcActive := currentFcActive
+  }
+  
   ; Parcourt toutes les fenêtres FBNeo
   activeHwnd := WinExist("A")
   activeHwndNum := activeHwnd + 0
