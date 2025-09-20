@@ -523,6 +523,10 @@ fbneoSpectateArmed := false
 
 __fbneo_watch:
   ; Parcourt toutes les fenêtres FBNeo
+  activeHwnd := WinExist("A")
+  firstNoGameHwnd := 0
+  preferredHwnd := 0
+  armedThisRun := false
   WinGet, list, List, Fightcade FBNeo
   loop, %list%
   {
@@ -530,15 +534,30 @@ __fbneo_watch:
      WinGetTitle, t, ahk_id %id%
      if InStr(t, "[no game loaded]")
      {
-        ; Armé : on a vu l'écran "no game loaded" pour CETTE fenêtre
-        fbneoSpectatingHwnd := id
-        fbneoSpectateArmed := true
-        return
+        if (!firstNoGameHwnd)
+           firstNoGameHwnd := id
+        if (id = activeHwnd)
+        {
+           preferredHwnd := id
+           FormatTime, tx,, HH:mm:ss
+           FileAppend, % tx "  spectate prefer active hwnd " id "`r`n", %log_path%
+           break
+        }
      }
   }
 
+  if (!preferredHwnd && firstNoGameHwnd)
+     preferredHwnd := firstNoGameHwnd
+
+  if (preferredHwnd)
+  {
+     fbneoSpectatingHwnd := preferredHwnd
+     fbneoSpectateArmed := true
+     armedThisRun := true
+  }
+
   ; Si armé, vérifier que la même fenêtre est toujours là et que le titre n'a plus "[no game loaded]"
-  if (fbneoSpectateArmed && fbneoSpectatingHwnd)
+  if (!armedThisRun && fbneoSpectateArmed && fbneoSpectatingHwnd)
   {
      if WinExist("ahk_id " fbneoSpectatingHwnd)
      {
