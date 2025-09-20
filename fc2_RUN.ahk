@@ -531,6 +531,11 @@ __fbneo_watch:
      if InStr(t, "[no game loaded]")
      {
         ; Armé : on a vu l'écran "no game loaded" pour CETTE fenêtre
+        if WinActive("ahk_id " id)
+        {
+           FormatTime, tl,, yyyy-MM-dd HH:mm:ss
+           FileAppend, % tl "  spectator wait active: " t "`r`n", %log_path%
+        }
         fbneoSpectatingHwnd := id
         fbneoSpectateArmed := true
         return
