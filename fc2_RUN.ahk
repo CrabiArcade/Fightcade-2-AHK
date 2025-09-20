@@ -1,15 +1,3 @@
-/*
-  fc2_run_v42.ahk — AHK 1.1 (labels only)
-  - Zones: Cloche(1) ↔ Chat(2) ↔ Contacts(3) — start at Chat
-  - f = GAUCHE (3→2→1→3), h = DROITE (1→2→3→1) — déterministe
-  - Contacts: g/v NE CLIQUENT PLUS. 1 par 1 avec scroll, la souris ne fait que se POSER.
-      * Bas de page: WheelDown 1, update index, souris sur la nouvelle dernière ligne visible (pas de clic).
-      * Haut de page: WheelUp 1, update index, souris sur la nouvelle première ligne visible (pas de clic).
-  - 'a' en zone Contacts fait le double-clic (challenge). 
-  - 1s d'attente avant de taper la recherche
-  - Esc (si FC2 actif) : ferme FC2 + quitte script
-*/
-
 #SingleInstance Force
 #NoEnv
 #Persistent
