@@ -697,12 +697,12 @@ loop, %list%
         if (toggleReason != "")
         {
            reasonLabel := (toggleReason = "timeout") ? "timeout fallback" : "title change"
-           WinActivate, ahk_id %fbneoSpectatingHwnd%
-           Sleep, 250
-           FormatTime, txFullscreen,, yyyy-MM-dd HH:mm:ss
-           FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée] (" reasonLabel ")`r`n", %log_path%
-           ControlSend,, !{Enter}, ahk_id %fbneoSpectatingHwnd%
-           FormatTime, txAfter,, yyyy-MM-dd HH:mm:ss
+          WinActivate, ahk_id %fbneoSpectatingHwnd%
+          SendInput, {Alt down}{Enter}{Alt up}
+          Sleep, 250
+          FormatTime, txFullscreen,, yyyy-MM-dd HH:mm:ss
+          FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée] (" reasonLabel ")`r`n", %log_path%
+          FormatTime, txAfter,, yyyy-MM-dd HH:mm:ss
            if (toggleReason = "timeout")
             {
               FileAppend, % txAfter "  spectate forced fullscreen after wait (timeout fallback) hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
