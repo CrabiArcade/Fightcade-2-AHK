@@ -635,6 +635,8 @@ loop, %list%
         {
            WinActivate, ahk_id %fbneoSpectatingHwnd%
            Sleep, 250
+           FormatTime, txFullscreen,, yyyy-MM-dd HH:mm:ss
+           FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée]`r`n", %log_path%
            ControlSend,, !{Enter}, ahk_id %fbneoSpectatingHwnd%
            FormatTime, txTimeout,, yyyy-MM-dd HH:mm:ss
            elapsed := A_TickCount - fbneoNoGameWatchSince
@@ -649,6 +651,8 @@ loop, %list%
            ; Jeu chargé → plein écran
            WinActivate, ahk_id %fbneoSpectatingHwnd%
            Sleep, 250
+           FormatTime, txFullscreen,, yyyy-MM-dd HH:mm:ss
+           FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée]`r`n", %log_path%
            ControlSend,, !{Enter}, ahk_id %fbneoSpectatingHwnd%
            ; Reset pour éviter les répétitions
            fbneoSpectateArmed := false
