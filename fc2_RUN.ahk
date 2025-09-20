@@ -558,26 +558,34 @@ __fbneo_watch:
   firstNoGameHwnd := 0
   preferredHwnd := 0
   armedThisRun := false
-  WinGet, list, List, Fightcade FBNeo
-  loop, %list%
-  {
-     id := list%A_Index%
-     WinGetTitle, t, ahk_id %id%
-     if InStr(t, "[no game loaded]")
-     {
-        FormatTime, tx,, HH:mm:ss
+WinGet, list, List, Fightcade FBNeo
+loop, %list%
+{
+    id := list%A_Index%
+    WinGetTitle, t, ahk_id %id%
+    if InStr(t, "[no game loaded]")
+    {
+        ; Candidat spectate détecté
+        FormatTime, tx,, yyyy-MM-dd HH:mm:ss
         FileAppend, % tx "  spectate candidate hwnd=" id " normalized=" (id + 0) "`r`n", %log_path%
+
         if (!firstNoGameHwnd)
-           firstNoGameHwnd := id
+            firstNoGameHwnd := id
+
+        ; Si la fenêtre candidate est la fenêtre active, on la préfère
         if (id + 0 = activeHwndNum)
         {
-           preferredHwnd := id
-           FormatTime, tx,, HH:mm:ss
-           FileAppend, % tx "  spectate prefer active hwnd " id " (normalized " activeHwndNum ")`r`n", %log_path%
-           break
+            preferredHwnd := id
+            FileAppend, % tx "  spectate prefer active hwnd " id " (normalized " activeHwndNum ")`r`n", %log_path%
+
+            ; Log additionnel lorsque la fenêtre active correspond
+            if WinActive("ahk_id " id)
+                FileAppend, % tx "  spectator wait active: " t "`r`n", %log_path%
+
+            break
         }
-     }
-  }
+    }
+}
 
   if (!preferredHwnd && firstNoGameHwnd)
      preferredHwnd := firstNoGameHwnd
