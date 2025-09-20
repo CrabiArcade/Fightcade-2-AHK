@@ -513,6 +513,8 @@ return
 ; ---------- STAY RESIDENT ----------
 __stay:
 SetTimer, __keepalive, 3000
+; Démarre le watcher (toutes les 400 ms)
+SetTimer, __fbneo_watch, 400
 __keepalive:
 return
 
@@ -622,9 +624,6 @@ loop, %list%
      }
   }
 return
-
-; Démarre le watcher (toutes les 400 ms)
-SetTimer, __fbneo_watch, 400
 
 ; ===== ESC spécifique émulateurs (FBNeo/Flycast/etc.) =====
 EmuActive() {
