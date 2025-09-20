@@ -616,7 +616,7 @@ loop, %list%
      {
         fbneoNoGameWatchSince := A_TickCount
         FormatTime, txWatch,, yyyy-MM-dd HH:mm:ss
-        FileAppend, % txWatch "  [no game loaded] trouvé, lancement du timer de 10 secondes hwnd=" (preferredHwnd + 0) "`r`n", %log_path%
+        FileAppend, % txWatch "  [no game loaded] trouvé, lancement du timer de 14 secondes hwnd=" (preferredHwnd + 0) "`r`n", %log_path%
      }
      fbneoSpectatingHwnd := preferredHwnd
      fbneoSpectateArmed := true
@@ -630,7 +630,7 @@ loop, %list%
         WinGetTitle, t2, ahk_id %fbneoSpectatingHwnd%
         timeoutReached := (fbneoNoGameWatchHwnd = fbneoSpectatingHwnd)
             && (fbneoNoGameWatchSince)
-            && (A_TickCount - fbneoNoGameWatchSince >= 10000)
+            && (A_TickCount - fbneoNoGameWatchSince >= 14000)
         if (timeoutReached)
         {
            WinActivate, ahk_id %fbneoSpectatingHwnd%
