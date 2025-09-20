@@ -49,6 +49,7 @@ lastFocusTitleLog := 0
 fbneo_watch_started := false
 
 ; ---------- LOG ----------
+FileDelete, %log_path%
 FormatTime, t0,, yyyy-MM-dd HH:mm:ss
 FileAppend, % t0 "  START v42 no-click-nav (g/v)`r`n", %log_path%
 
