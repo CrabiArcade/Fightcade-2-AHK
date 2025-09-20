@@ -635,32 +635,34 @@ loop, %list%
      if WinExist("ahk_id " fbneoSpectatingHwnd)
      {
         WinGetTitle, t2, ahk_id %fbneoSpectatingHwnd%
+        elapsed := fbneoNoGameWatchSince ? (A_TickCount - fbneoNoGameWatchSince) : 0
         timeoutReached := (fbneoNoGameWatchHwnd = fbneoSpectatingHwnd)
             && (fbneoNoGameWatchSince)
-            && (A_TickCount - fbneoNoGameWatchSince >= spectate_fullscreen_timeout_ms)
-        if (timeoutReached)
+            && (elapsed >= spectate_fullscreen_timeout_ms)
+        if (timeoutReached && InStr(t2, "[no game loaded]"))
         {
            WinActivate, ahk_id %fbneoSpectatingHwnd%
            Sleep, 250
            FormatTime, txFullscreen,, yyyy-MM-dd HH:mm:ss
-           FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée]`r`n", %log_path%
+           FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée] (timeout fallback)`r`n", %log_path%
            ControlSend,, !{Enter}, ahk_id %fbneoSpectatingHwnd%
            FormatTime, txTimeout,, yyyy-MM-dd HH:mm:ss
-           elapsed := A_TickCount - fbneoNoGameWatchSince
-           FileAppend, % txTimeout "  spectate forced fullscreen after wait hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
+           FileAppend, % txTimeout "  spectate forced fullscreen after wait (timeout fallback) hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
            fbneoSpectateArmed := false
            fbneoSpectatingHwnd := 0
            fbneoNoGameWatchHwnd := 0
            fbneoNoGameWatchSince := 0
         }
-        else if !InStr(t2, "[no game loaded]")
+        else if (!InStr(t2, "[no game loaded]") && elapsed >= spectate_fullscreen_timeout_ms)
         {
            ; Jeu chargé → plein écran
            WinActivate, ahk_id %fbneoSpectatingHwnd%
            Sleep, 250
            FormatTime, txFullscreen,, yyyy-MM-dd HH:mm:ss
-           FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée]`r`n", %log_path%
+           FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée] (title change)`r`n", %log_path%
            ControlSend,, !{Enter}, ahk_id %fbneoSpectatingHwnd%
+           FormatTime, txTitleChange,, yyyy-MM-dd HH:mm:ss
+           FileAppend, % txTitleChange "  spectate fullscreen triggered by title change hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
            ; Reset pour éviter les répétitions
            fbneoSpectateArmed := false
            fbneoSpectatingHwnd := 0
