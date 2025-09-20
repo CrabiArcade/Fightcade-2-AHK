@@ -45,6 +45,7 @@ cmd_side := 1          ; 1=ACCEPT, 2=DECLINE
 notif_mode := false
 chat_mode := false
 right_view_rows := 0   ; calculé dynamiquement
+lastFocusTitleLog := 0
 
 ; ---------- LOG ----------
 FormatTime, t0,, yyyy-MM-dd HH:mm:ss
@@ -537,8 +538,6 @@ __fbneo_watch:
         FileAppend, % txFocus "  FOCUS Fightcade lost`r`n", %log_path%
      lastFcActive := currentFcActive
   }
-
-  static lastFocusTitleLog := 0
 
   activeHwnd := WinExist("A")
   if (A_TickCount - lastFocusTitleLog >= 1000)
