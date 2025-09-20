@@ -537,9 +537,21 @@ __fbneo_watch:
         FileAppend, % txFocus "  FOCUS Fightcade lost`r`n", %log_path%
      lastFcActive := currentFcActive
   }
-  
-  ; Parcourt toutes les fenêtres FBNeo
+
+  static lastFocusTitleLog := 0
+
   activeHwnd := WinExist("A")
+  if (A_TickCount - lastFocusTitleLog >= 1000)
+  {
+     activeTitle := ""
+     if (activeHwnd)
+        WinGetTitle, activeTitle, ahk_id %activeHwnd%
+     FormatTime, txFocusTitle,, yyyy-MM-dd HH:mm:ss
+     FileAppend, % txFocusTitle "  FOCUS active title=" activeTitle "`r`n", %log_path%
+     lastFocusTitleLog := A_TickCount
+  }
+
+  ; Parcourt toutes les fenêtres FBNeo
   activeHwndNum := activeHwnd + 0
   FormatTime, tx,, HH:mm:ss
   FileAppend, % tx "  spectate active hwnd raw=" activeHwnd " normalized=" activeHwndNum "`r`n", %log_path%
