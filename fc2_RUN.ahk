@@ -534,9 +534,12 @@ return
 fbneoSpectatingHwnd := 0
 fbneoSpectateArmed := false
 lastFcActive := ""
+fbneoNoGameWatchHwnd := 0
+fbneoNoGameWatchSince := 0
 
 __fbneo_watch:
   global lastFocusTitleLog, log_path, fc_title, fbneoSpectatingHwnd, fbneoSpectateArmed, lastFcActive
+  global fbneoNoGameWatchHwnd, fbneoNoGameWatchSince
   currentFcActive := WinActive(fc_title) ? 1 : 0
   if (lastFcActive = "")
   {
@@ -604,6 +607,15 @@ loop, %list%
 
   if (preferredHwnd)
   {
+     if (fbneoNoGameWatchHwnd != preferredHwnd)
+     {
+        fbneoNoGameWatchHwnd := preferredHwnd
+        fbneoNoGameWatchSince := A_TickCount
+     }
+     else if (!fbneoNoGameWatchSince)
+     {
+        fbneoNoGameWatchSince := A_TickCount
+     }
      fbneoSpectatingHwnd := preferredHwnd
      fbneoSpectateArmed := true
      armedThisRun := true
@@ -615,7 +627,23 @@ loop, %list%
      if WinExist("ahk_id " fbneoSpectatingHwnd)
      {
         WinGetTitle, t2, ahk_id %fbneoSpectatingHwnd%
-        if !InStr(t2, "[no game loaded]")
+        timeoutReached := (fbneoNoGameWatchHwnd = fbneoSpectatingHwnd)
+            && (fbneoNoGameWatchSince)
+            && (A_TickCount - fbneoNoGameWatchSince >= 10000)
+        if (timeoutReached)
+        {
+           WinActivate, ahk_id %fbneoSpectatingHwnd%
+           Sleep, 250
+           ControlSend,, !{Enter}, ahk_id %fbneoSpectatingHwnd%
+           FormatTime, txTimeout,, yyyy-MM-dd HH:mm:ss
+           elapsed := A_TickCount - fbneoNoGameWatchSince
+           FileAppend, % txTimeout "  spectate forced fullscreen after wait hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
+           fbneoSpectateArmed := false
+           fbneoSpectatingHwnd := 0
+           fbneoNoGameWatchHwnd := 0
+           fbneoNoGameWatchSince := 0
+        }
+        else if !InStr(t2, "[no game loaded]")
         {
            ; Jeu chargé → plein écran
            WinActivate, ahk_id %fbneoSpectatingHwnd%
@@ -624,6 +652,8 @@ loop, %list%
            ; Reset pour éviter les répétitions
            fbneoSpectateArmed := false
            fbneoSpectatingHwnd := 0
+           fbneoNoGameWatchHwnd := 0
+           fbneoNoGameWatchSince := 0
         }
      }
      else
@@ -631,6 +661,8 @@ loop, %list%
         ; Fenêtre disparue
         fbneoSpectateArmed := false
         fbneoSpectatingHwnd := 0
+        fbneoNoGameWatchHwnd := 0
+        fbneoNoGameWatchSince := 0
      }
   }
 return
