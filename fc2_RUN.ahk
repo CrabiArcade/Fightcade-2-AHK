@@ -577,8 +577,17 @@ __fbneo_watch:
   activeHwndNum := activeHwnd + 0
   FormatTime, tx,, HH:mm:ss
   FileAppend, % tx "  spectate active hwnd raw=" activeHwnd " normalized=" activeHwndNum "`r`n", %log_path%
+  if (fbneoSpectateArmed && fbneoSpectatingHwnd && !WinExist("ahk_id " fbneoSpectatingHwnd))
+  {
+     fbneoSpectatingHwnd := 0
+     fbneoNoGameWatchHwnd := 0
+  }
+
   firstNoGameHwnd := 0
   preferredHwnd := 0
+  preferredReason := ""
+  fallbackHwnd := 0
+  fallbackActiveHwnd := 0
 WinGet, list, List, Fightcade FBNeo
 loop, %list%
 {
@@ -597,6 +606,7 @@ loop, %list%
         if (id + 0 = activeHwndNum)
         {
             preferredHwnd := id
+            preferredReason := "no_game"
             FileAppend, % tx "  spectate prefer active hwnd " id " (normalized " activeHwndNum ")`r`n", %log_path%
 
             ; Log additionnel lorsque la fenêtre active correspond
@@ -606,10 +616,33 @@ loop, %list%
             break
         }
     }
+    else
+    {
+        if (id + 0 = activeHwndNum)
+            fallbackActiveHwnd := id
+        if (!fallbackHwnd)
+            fallbackHwnd := id
+    }
 }
 
   if (!preferredHwnd && firstNoGameHwnd)
+  {
      preferredHwnd := firstNoGameHwnd
+     preferredReason := "no_game"
+  }
+
+  if (!preferredHwnd && fbneoSpectateArmed && !fbneoSpectatingHwnd && fbneoNoGameWatchSince)
+  {
+     if (fallbackActiveHwnd)
+        preferredHwnd := fallbackActiveHwnd
+     else if (fallbackHwnd)
+        preferredHwnd := fallbackHwnd
+     if (preferredHwnd)
+     {
+        preferredReason := "successor"
+        FileAppend, % tx "  spectate successor candidate hwnd=" preferredHwnd " normalized=" (preferredHwnd + 0) "`r`n", %log_path%
+     }
+  }
 
   if (preferredHwnd)
   {
@@ -619,11 +652,16 @@ loop, %list%
         fbneoNoGameWatchHwnd := preferredHwnd
         rearmedWatch := true
      }
-     if (!fbneoNoGameWatchSince || rearmedWatch)
+     if (preferredReason = "no_game" && (!fbneoNoGameWatchSince || rearmedWatch))
      {
         fbneoNoGameWatchSince := A_TickCount
         FormatTime, txWatch,, yyyy-MM-dd HH:mm:ss
         FileAppend, % txWatch "  [no game loaded] trouvé, lancement du timer de " spectate_fullscreen_timeout_s " secondes hwnd=" (preferredHwnd + 0) "`r`n", %log_path%
+     }
+     else if (preferredReason = "successor" && rearmedWatch)
+     {
+        FormatTime, txSuccessor,, yyyy-MM-dd HH:mm:ss
+        FileAppend, % txSuccessor "  spectate watch re-armed on successor window hwnd=" (preferredHwnd + 0) " (preserving start)`r`n", %log_path%
      }
      fbneoSpectatingHwnd := preferredHwnd
      fbneoSpectateArmed := true
@@ -639,31 +677,28 @@ loop, %list%
         timeoutReached := (fbneoNoGameWatchHwnd = fbneoSpectatingHwnd)
             && (fbneoNoGameWatchSince)
             && (elapsed >= spectate_fullscreen_timeout_ms)
+        toggleReason := ""
         if (timeoutReached && InStr(t2, "[no game loaded]"))
         {
-           WinActivate, ahk_id %fbneoSpectatingHwnd%
-           Sleep, 250
-           FormatTime, txFullscreen,, yyyy-MM-dd HH:mm:ss
-           FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée] (timeout fallback)`r`n", %log_path%
-           ControlSend,, !{Enter}, ahk_id %fbneoSpectatingHwnd%
-           FormatTime, txTimeout,, yyyy-MM-dd HH:mm:ss
-           FileAppend, % txTimeout "  spectate forced fullscreen after wait (timeout fallback) hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
-           fbneoSpectateArmed := false
-           fbneoSpectatingHwnd := 0
-           fbneoNoGameWatchHwnd := 0
-           fbneoNoGameWatchSince := 0
+           toggleReason := "timeout"
         }
         else if (!InStr(t2, "[no game loaded]") && elapsed >= spectate_fullscreen_timeout_ms)
         {
-           ; Jeu chargé → plein écran
+           toggleReason := "title"
+        }
+        if (toggleReason != "")
+        {
+           reasonLabel := (toggleReason = "timeout") ? "timeout fallback" : "title change"
            WinActivate, ahk_id %fbneoSpectatingHwnd%
            Sleep, 250
            FormatTime, txFullscreen,, yyyy-MM-dd HH:mm:ss
-           FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée] (title change)`r`n", %log_path%
+           FileAppend, % txFullscreen "  Activation mode plein ecran [ALT+Entrée] (" reasonLabel ")`r`n", %log_path%
            ControlSend,, !{Enter}, ahk_id %fbneoSpectatingHwnd%
-           FormatTime, txTitleChange,, yyyy-MM-dd HH:mm:ss
-           FileAppend, % txTitleChange "  spectate fullscreen triggered by title change hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
-           ; Reset pour éviter les répétitions
+           FormatTime, txAfter,, yyyy-MM-dd HH:mm:ss
+           if (toggleReason = "timeout")
+              FileAppend, % txAfter "  spectate forced fullscreen after wait (timeout fallback) hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
+           else
+              FileAppend, % txAfter "  spectate fullscreen triggered by title change hwnd=" fbneoSpectatingHwnd " elapsed=" elapsed "ms`r`n", %log_path%
            fbneoSpectateArmed := false
            fbneoSpectatingHwnd := 0
            fbneoNoGameWatchHwnd := 0
@@ -673,10 +708,8 @@ loop, %list%
      else
      {
         ; Fenêtre disparue
-        fbneoSpectateArmed := false
         fbneoSpectatingHwnd := 0
         fbneoNoGameWatchHwnd := 0
-        fbneoNoGameWatchSince := 0
      }
   }
 return
