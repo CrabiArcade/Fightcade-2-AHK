@@ -524,6 +524,7 @@ fbneoSpectateArmed := false
 __fbneo_watch:
   ; Parcourt toutes les fenêtres FBNeo
   activeHwnd := WinExist("A")
+  activeHwndNum := activeHwnd + 0
   firstNoGameHwnd := 0
   preferredHwnd := 0
   armedThisRun := false
@@ -536,11 +537,11 @@ __fbneo_watch:
      {
         if (!firstNoGameHwnd)
            firstNoGameHwnd := id
-        if (id = activeHwnd)
+        if (id + 0 = activeHwndNum)
         {
            preferredHwnd := id
            FormatTime, tx,, HH:mm:ss
-           FileAppend, % tx "  spectate prefer active hwnd " id "`r`n", %log_path%
+           FileAppend, % tx "  spectate prefer active hwnd " id " (normalized " activeHwndNum ")`r`n", %log_path%
            break
         }
      }
