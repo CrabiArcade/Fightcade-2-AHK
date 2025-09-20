@@ -46,6 +46,7 @@ notif_mode := false
 chat_mode := false
 right_view_rows := 0   ; calculé dynamiquement
 lastFocusTitleLog := 0
+fbneo_watch_started := false
 
 ; ---------- LOG ----------
 FormatTime, t0,, yyyy-MM-dd HH:mm:ss
@@ -217,6 +218,11 @@ tipmsg := "Zones: f=GAUCHE / h=DROITE | Cloche ↔ Chat ↔ Contacts | g/v=haut/
 tipms := 2400
 Gosub, __showtip
 Gosub, __focusZone
+
+if (!fbneo_watch_started) {
+    SetTimer, __fbneo_watch, 400
+    fbneo_watch_started := true
+}
 
 ; ---------- HOTKEYS (active only in FC2 window) ----------
 #IfWinActive, Fightcade - Online retro gaming
@@ -512,9 +518,13 @@ return
 
 ; ---------- STAY RESIDENT ----------
 __stay:
-SetTimer, __keepalive, 3000
-; Démarre le watcher (toutes les 400 ms)
-SetTimer, __fbneo_watch, 400
+  global fbneo_watch_started
+  SetTimer, __keepalive, 3000
+  ; Démarre le watcher (toutes les 400 ms)
+  if (!fbneo_watch_started) {
+    SetTimer, __fbneo_watch, 400
+    fbneo_watch_started := true
+  }
 __keepalive:
 return
 
