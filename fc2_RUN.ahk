@@ -525,6 +525,8 @@ __fbneo_watch:
   ; Parcourt toutes les fenêtres FBNeo
   activeHwnd := WinExist("A")
   activeHwndNum := activeHwnd + 0
+  FormatTime, tx,, HH:mm:ss
+  FileAppend, % tx "  spectate active hwnd raw=" activeHwnd " normalized=" activeHwndNum "`r`n", %log_path%
   firstNoGameHwnd := 0
   preferredHwnd := 0
   armedThisRun := false
@@ -535,6 +537,8 @@ __fbneo_watch:
      WinGetTitle, t, ahk_id %id%
      if InStr(t, "[no game loaded]")
      {
+        FormatTime, tx,, HH:mm:ss
+        FileAppend, % tx "  spectate candidate hwnd=" id " normalized=" (id + 0) "`r`n", %log_path%
         if (!firstNoGameHwnd)
            firstNoGameHwnd := id
         if (id + 0 = activeHwndNum)
