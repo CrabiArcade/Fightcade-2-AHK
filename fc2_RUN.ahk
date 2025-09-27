@@ -66,6 +66,27 @@ if (query = "") {
     Goto, __stay
 }
 
+; ---------- JOYTOKEY / FIGHTCADE SETTINGS ----------
+IniRead, joytokey_exe, %cfg%, joytokey, exe, 
+IniRead, joytokey_fightcade_cfg, %cfg%, joytokey, fightcade_cfg, 
+IniRead, joytokey_launchbox_cfg, %cfg%, joytokey, launchbox_bigbox_cfg, 
+IniRead, fightcade_proc, %cfg%, fightcade, proc, 
+
+joytokey_process_name := ""
+joytokey_window_title := ""
+if (joytokey_exe != "")
+{
+    SplitPath, joytokey_exe, joytokey_process_name
+    if (joytokey_process_name != "")
+    {
+        joytokey_window_title := "ahk_exe " joytokey_process_name
+    }
+}
+
+JoyToKeyClose()
+JoyToKeyLaunch(joytokey_fightcade_cfg)
+OnExit, __JoyToKey_OnExit
+
 ; ---------- LOAD COORDS ----------
 IniRead, search_icon_x, %cfg%, coords, search_icon_x, 0
 IniRead, search_icon_y, %cfg%, coords, search_icon_y, 0
@@ -714,6 +735,95 @@ loop, %list%
         fbneoNoGameWatchHwnd := 0
      }
   }
+return
+
+JoyToKeyClose()
+{
+    global joytokey_process_name
+    if (joytokey_process_name = "")
+        return
+    Process, Exist, %joytokey_process_name%
+    if (ErrorLevel)
+    {
+        Process, Close, %joytokey_process_name%
+        Loop
+        {
+            Process, Exist, %joytokey_process_name%
+            if (ErrorLevel = 0)
+            {
+                break
+            }
+            Sleep, 100
+        }
+    }
+}
+
+JoyToKeyLaunch(configPath)
+{
+    global joytokey_exe, joytokey_process_name, joytokey_window_title
+    if (joytokey_exe = "" || configPath = "")
+        return
+    if (joytokey_process_name = "")
+    {
+        SplitPath, joytokey_exe, joytokey_process_name
+        if (joytokey_process_name != "")
+        {
+            joytokey_window_title := "ahk_exe " joytokey_process_name
+        }
+    }
+    Run, "%joytokey_exe%" "%configPath%",, UseErrorLevel, joytokey_pid
+    if (ErrorLevel)
+        return
+    startTick := A_TickCount
+    if (joytokey_process_name != "")
+    {
+        Loop
+        {
+            Process, Exist, %joytokey_process_name%
+            if (ErrorLevel)
+            {
+                break
+            }
+            if (A_TickCount - startTick > 5000)
+            {
+                break
+            }
+            Sleep, 100
+        }
+    }
+    if (joytokey_window_title = "" && joytokey_process_name != "")
+    {
+        joytokey_window_title := "ahk_exe " joytokey_process_name
+    }
+    if (joytokey_window_title != "")
+    {
+        WinWait, %joytokey_window_title%,, 3000
+        WinSet, ExStyle, +0x80, %joytokey_window_title%
+        WinHide, %joytokey_window_title%
+    }
+}
+
+__JoyToKey_OnExit:
+    JoyToKeyClose()
+    if (fightcade_proc != "")
+    {
+        waitStart := A_TickCount
+        Loop
+        {
+            Process, Exist, %fightcade_proc%
+            if (ErrorLevel = 0)
+            {
+                break
+            }
+            if (A_TickCount - waitStart > 15000)
+            {
+                break
+            }
+            Sleep, 250
+        }
+    }
+    JoyToKeyLaunch(joytokey_launchbox_cfg)
+    ExitApp
 return
 
 ; ===== ESC spécifique émulateurs (FBNeo/Flycast/etc.) =====
